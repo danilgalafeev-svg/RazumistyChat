@@ -56,13 +56,26 @@ document.getElementById("sendBtn").onclick = sendMessage;
 
 /* AUTH */
 async function login() {
-  const email = document.getElementById("email").value;
-  const password = document.getElementById("password").value;
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+
+  if (!email || !password) {
+    alert("Введите email и пароль");
+    return;
+  }
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
-  } catch {
-    await createUserWithEmailAndPassword(auth, email, password);
+  } catch (err) {
+    if (err.code === "auth/user-not-found") {
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+      } catch (e) {
+        alert(e.message);
+      }
+    } else {
+      alert(err.message);
+    }
   }
 }
 
