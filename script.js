@@ -1,11 +1,32 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+/* =========================
+   1. ВИЗУАЛЬНЫЙ ИНДИКАТОР
+   ========================= */
+const indicator = document.createElement("div");
+indicator.textContent = "✅ script.js загружен";
+indicator.style.position = "fixed";
+indicator.style.bottom = "10px";
+indicator.style.right = "10px";
+indicator.style.padding = "8px 12px";
+indicator.style.background = "#22c55e";
+indicator.style.color = "white";
+indicator.style.borderRadius = "8px";
+indicator.style.fontSize = "12px";
+indicator.style.zIndex = "9999";
+document.body.appendChild(indicator);
+
+console.log("SCRIPT LOADED");
+
+/* =========================
+   2. FIREBASE IMPORTS
+   ========================= */
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signOut
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 import {
   getFirestore,
@@ -15,9 +36,12 @@ import {
   orderBy,
   onSnapshot,
   serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-/* 🔥 ВСТАВЬ СЮДА СВОЙ firebaseConfig */
+/* =========================
+   3. FIREBASE CONFIG
+   ========================= */
+/* 🔥 ОБЯЗАТЕЛЬНО замени на свой */
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyCQbqSyJqVuKFo_5fsC0vXDYyg96TnHIN0",
@@ -29,28 +53,48 @@ const firebaseConfig = {
   measurementId: "G-QDS14TPQB0"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+console.log("Before Firebase init");
 
+/* =========================
+   4. INIT
+   ========================= */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* DOM */
+console.log("Firebase initialized");
+
+/* =========================
+   5. DOM ELEMENTS
+   ========================= */
 const authDiv = document.getElementById("auth");
 const chatDiv = document.getElementById("chat");
 const messagesDiv = document.getElementById("messages");
 const emailSpan = document.getElementById("userEmail");
 
-document.getElementById("loginBtn").onclick = login;
-document.getElementById("logoutBtn").onclick = () => signOut(auth);
-document.getElementById("sendBtn").onclick = sendMessage;
+const emailInput = document.getElementById("email");
+const passwordInput = document.getElementById("password");
+const messageInput = document.getElementById("messageInput");
 
-/* AUTH */
+const loginBtn = document.getElementById("loginBtn");
+const logoutBtn = document.getElementById("logoutBtn");
+const sendBtn = document.getElementById("sendBtn");
+
+/* =========================
+   6. BUTTONS
+   ========================= */
+loginBtn.addEventListener("click", login);
+logoutBtn.addEventListener("click", () => signOut(auth));
+sendBtn.addEventListener("click", sendMessage);
+
+/* =========================
+   7. AUTH
+   ========================= */
 async function login() {
-  const email = document.getElementById("email").value.trim();
-  const password = document.getElementById("password").value.trim();
+  console.log("LOGIN CLICKED");
+
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
 
   if (!email || !password) {
     alert("Введите email и пароль");
@@ -59,47 +103,51 @@ async function login() {
 
   try {
     await signInWithEmailAndPassword(auth, email, password);
+    console.log("SIGNED IN");
   } catch (err) {
-    if (err.code === "auth/user-not-found") {
-      try {
-        await createUserWithEmailAndPassword(auth, email, password);
-      } catch (e) {
-        alert(e.message);
-      }
-    } else {
-      alert(err.message);
+    console.warn("SIGN IN FAILED:", err.code);
+    try {
+      await createUserWithEmailAndPassword(auth, email, password);
+      console.log("USER CREATED");
+    } catch (e) {
+      alert(e.message);
     }
   }
 }
 
 onAuthStateChanged(auth, user => {
+  console.log("AUTH STATE CHANGED:", user);
+
   if (user) {
     authDiv.classList.add("hidden");
     chatDiv.classList.remove("hidden");
     emailSpan.textContent = user.email;
-    loadMessages();
+    startChat();
   } else {
     authDiv.classList.remove("hidden");
     chatDiv.classList.add("hidden");
   }
 });
 
-/* CHAT */
+/* =========================
+   8. CHAT
+   ========================= */
 async function sendMessage() {
-  const input = document.getElementById("messageInput");
-  const text = input.value.trim();
+  const text = messageInput.value.trim();
   if (!text) return;
 
   await addDoc(collection(db, "messages"), {
     user: auth.currentUser.email,
-    text,
+    text: text,
     createdAt: serverTimestamp()
   });
 
-  input.value = "";
+  messageInput.value = "";
 }
 
-function loadMessages() {
+function startChat() {
+  console.log("CHAT STARTED");
+
   const q = query(
     collection(db, "messages"),
     orderBy("createdAt")
@@ -107,6 +155,7 @@ function loadMessages() {
 
   onSnapshot(q, snapshot => {
     messagesDiv.innerHTML = "";
+
     snapshot.forEach(doc => {
       const msg = doc.data();
       const div = document.createElement("div");
@@ -114,6 +163,7 @@ function loadMessages() {
       div.innerHTML = `<span>${msg.user}:</span> ${msg.text}`;
       messagesDiv.appendChild(div);
     });
+
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
   });
 }
