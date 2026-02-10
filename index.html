@@ -2,32 +2,32 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Simple Chat</title>
+  <title>Firebase Chat</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="container" id="auth">
-  <h1>💬 Chat</h1>
-  <input type="text" id="username" placeholder="Логин">
-  <input type="password" id="password" placeholder="Пароль">
-  <button onclick="login()">Войти / Зарегистрироваться</button>
+<div class="card" id="auth">
+  <h1>🔥 Chat</h1>
+  <input id="email" type="email" placeholder="Email">
+  <input id="password" type="password" placeholder="Пароль">
+  <button id="loginBtn">Войти / Регистрация</button>
 </div>
 
 <div class="chat hidden" id="chat">
   <div class="chat-header">
-    <span id="currentUser"></span>
-    <button onclick="logout()">Выйти</button>
+    <span id="userEmail"></span>
+    <button id="logoutBtn">Выйти</button>
   </div>
 
   <div class="messages" id="messages"></div>
 
   <div class="input-area">
-    <input type="text" id="messageInput" placeholder="Введите сообщение...">
-    <button onclick="sendMessage()">➤</button>
+    <input id="messageInput" type="text" placeholder="Сообщение...">
+    <button id="sendBtn">➤</button>
   </div>
 </div>
 
-<script src="script.js"></script>
+<script type="module" src="script.js"></script>
 </body>
 </html>
