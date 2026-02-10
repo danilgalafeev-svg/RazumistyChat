@@ -1,75 +1,100 @@
-const auth = document.getElementById('auth');
-const chat = document.getElementById('chat');
-const messagesDiv = document.getElementById('messages');
-const currentUserSpan = document.getElementById('currentUser');
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-let currentUser = localStorage.getItem('currentUser');
-let messages = JSON.parse(localStorage.getItem('messages')) || [];
+import {
+  getFirestore,
+  collection,
+  addDoc,
+  query,
+  orderBy,
+  onSnapshot,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-if (currentUser) {
-  showChat();
-}
+/* 🔥 ВСТАВЬ СЮДА СВОЙ firebaseConfig */
+const firebaseConfig = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "XXXX",
+  appId: "XXXX"
+};
 
-function login() {
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value;
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-  if (!username || !password) {
-    alert('Введите логин и пароль');
-    return;
+/* DOM */
+const authDiv = document.getElementById("auth");
+const chatDiv = document.getElementById("chat");
+const messagesDiv = document.getElementById("messages");
+const emailSpan = document.getElementById("userEmail");
+
+document.getElementById("loginBtn").onclick = login;
+document.getElementById("logoutBtn").onclick = () => signOut(auth);
+document.getElementById("sendBtn").onclick = sendMessage;
+
+/* AUTH */
+async function login() {
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+  } catch {
+    await createUserWithEmailAndPassword(auth, email, password);
   }
+}
 
-  let users = JSON.parse(localStorage.getItem('users')) || {};
-
-  if (!users[username]) {
-    users[username] = password;
-  } else if (users[username] !== password) {
-    alert('Неверный пароль');
-    return;
+onAuthStateChanged(auth, user => {
+  if (user) {
+    authDiv.classList.add("hidden");
+    chatDiv.classList.remove("hidden");
+    emailSpan.textContent = user.email;
+    loadMessages();
+  } else {
+    authDiv.classList.remove("hidden");
+    chatDiv.classList.add("hidden");
   }
+});
 
-  localStorage.setItem('users', JSON.stringify(users));
-  localStorage.setItem('currentUser', username);
-  currentUser = username;
-
-  showChat();
-}
-
-function showChat() {
-  auth.classList.add('hidden');
-  chat.classList.remove('hidden');
-  currentUserSpan.textContent = `👤 ${currentUser}`;
-  renderMessages();
-}
-
-function logout() {
-  localStorage.removeItem('currentUser');
-  location.reload();
-}
-
-function sendMessage() {
-  const input = document.getElementById('messageInput');
+/* CHAT */
+async function sendMessage() {
+  const input = document.getElementById("messageInput");
   const text = input.value.trim();
   if (!text) return;
 
-  messages.push({
-    user: currentUser,
+  await addDoc(collection(db, "messages"), {
+    user: auth.currentUser.email,
     text,
-    time: new Date().toLocaleTimeString()
+    createdAt: serverTimestamp()
   });
 
-  localStorage.setItem('messages', JSON.stringify(messages));
-  input.value = '';
-  renderMessages();
+  input.value = "";
 }
 
-function renderMessages() {
-  messagesDiv.innerHTML = '';
-  messages.forEach(msg => {
-    const div = document.createElement('div');
-    div.className = 'message';
-    div.innerHTML = `<span>${msg.user}:</span> ${msg.text}`;
-    messagesDiv.appendChild(div);
+function loadMessages() {
+  const q = query(
+    collection(db, "messages"),
+    orderBy("createdAt")
+  );
+
+  onSnapshot(q, snapshot => {
+    messagesDiv.innerHTML = "";
+    snapshot.forEach(doc => {
+      const msg = doc.data();
+      const div = document.createElement("div");
+      div.className = "message";
+      div.innerHTML = `<span>${msg.user}:</span> ${msg.text}`;
+      messagesDiv.appendChild(div);
+    });
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
   });
-  messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
