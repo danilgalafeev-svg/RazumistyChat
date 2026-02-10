@@ -49,8 +49,8 @@ const firebaseConfig = {
   projectId: "razumistychat",
   storageBucket: "razumistychat.firebasestorage.app",
   messagingSenderId: "634434991920",
-  appId: "1:634434991920:web:3b425be37b01d49cbdfaf5",
-  measurementId: "G-QDS14TPQB0"
+  appId: "1:634434991920:web:e3a7fec1ebf02ce5bdfaf5",
+  measurementId: "G-CV90KJ3QTX"
 };
 
 console.log("Before Firebase init");
