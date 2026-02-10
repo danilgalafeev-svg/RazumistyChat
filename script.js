@@ -18,14 +18,27 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 /* 🔥 ВСТАВЬ СЮДА СВОЙ firebaseConfig */
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_PROJECT.firebaseapp.com",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_PROJECT.appspot.com",
-  messagingSenderId: "XXXX",
-  appId: "XXXX"
+  apiKey: "AIzaSyCQbqSyJqVuKFo_5fsC0vXDYyg96TnHIN0",
+  authDomain: "razumistychat.firebaseapp.com",
+  projectId: "razumistychat",
+  storageBucket: "razumistychat.firebasestorage.app",
+  messagingSenderId: "634434991920",
+  appId: "1:634434991920:web:3b425be37b01d49cbdfaf5",
+  measurementId: "G-QDS14TPQB0"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
