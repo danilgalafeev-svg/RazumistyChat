@@ -1,161 +1,33 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Social Network</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel for JSX -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+  <meta charset="UTF-8">
+  <title>Simple Chat</title>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body class="bg-slate-50">
-    <div id="root"></div>
+<body>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+<div class="container" id="auth">
+  <h1>💬 Chat</h1>
+  <input type="text" id="username" placeholder="Логин">
+  <input type="password" id="password" placeholder="Пароль">
+  <button onclick="login()">Войти / Зарегистрироваться</button>
+</div>
 
-        // ВАЖНО: На GitHub Pages вам нужно вручную вставить ваш конфиг Firebase здесь,
-        // так как переменные окружения Canvas там недоступны.
-        const firebaseConfig = {
-            apiKey: "ВАШ_API_KEY",
-            authDomain: "ВАШ_PROJECT_ID.firebaseapp.com",
-            projectId: "ВАШ_PROJECT_ID",
-            storageBucket: "ВАШ_PROJECT_ID.appspot.com",
-            messagingSenderId: "ВАШ_SENDER_ID",
-            appId: "ВАШ_APP_ID"
-        };
+<div class="chat hidden" id="chat">
+  <div class="chat-header">
+    <span id="currentUser"></span>
+    <button onclick="logout()">Выйти</button>
+  </div>
 
-        // Динамический импорт модулей Firebase через CDN
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, query, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+  <div class="messages" id="messages"></div>
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = 'github-social-chat';
+  <div class="input-area">
+    <input type="text" id="messageInput" placeholder="Введите сообщение...">
+    <button onclick="sendMessage()">➤</button>
+  </div>
+</div>
 
-        function App() {
-            const [user, setUser] = useState(null);
-            const [messages, setMessages] = useState([]);
-            const [newMessage, setNewMessage] = useState('');
-            const [username, setUsername] = useState('');
-            const [isRegistering, setIsRegistering] = useState(false);
-            const messagesEndRef = useRef(null);
-
-            const scrollToBottom = () => {
-                messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-            };
-
-            useEffect(() => {
-                scrollToBottom();
-            }, [messages]);
-
-            useEffect(() => {
-                const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-                    if (!currentUser) {
-                        signInAnonymously(auth);
-                    }
-                    setUser(currentUser);
-                });
-                return () => unsubscribe();
-            }, []);
-
-            useEffect(() => {
-                if (!user) return;
-                const messagesQuery = query(collection(db, 'chat_messages'));
-                const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-                    const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setMessages(msgs.sort((a, b) => (a.createdAt?.seconds || 0) - (b.createdAt?.seconds || 0)));
-                });
-                return () => unsubscribe();
-            }, [user]);
-
-            const handleRegister = async (e) => {
-                e.preventDefault();
-                if (!username.trim()) return;
-                await updateProfile(auth.currentUser, { displayName: username });
-                setUser({ ...auth.currentUser, displayName: username });
-                setIsRegistering(false);
-            };
-
-            const sendMessage = async (e) => {
-                e.preventDefault();
-                if (!newMessage.trim() || !user) return;
-                await addDoc(collection(db, 'chat_messages'), {
-                    text: newMessage,
-                    uid: user.uid,
-                    displayName: user.displayName || 'Аноним',
-                    createdAt: serverTimestamp(),
-                });
-                setNewMessage('');
-            };
-
-            if (user && !user.displayName && isRegistering) {
-                return (
-                    <div className="flex items-center justify-center min-h-screen p-4">
-                        <div className="w-full max-w-md bg-white rounded-2xl shadow-xl p-8 border border-slate-100 text-center">
-                            <h1 className="text-2xl font-bold mb-4">Как вас зовут?</h1>
-                            <form onSubmit={handleRegister} className="space-y-4">
-                                <input 
-                                    className="w-full px-4 py-3 rounded-xl border" 
-                                    placeholder="Ваш никнейм..." 
-                                    value={username} 
-                                    onChange={e => setUsername(e.target.value)} 
-                                />
-                                <button className="w-full bg-blue-600 text-white py-3 rounded-xl">Войти</button>
-                            </form>
-                        </div>
-                    </div>
-                );
-            }
-
-            return (
-                <div className="flex flex-col h-screen">
-                    <header className="bg-white border-b p-4 flex justify-between items-center">
-                        <h1 className="font-bold text-xl">Общий Чат</h1>
-                        <div className="flex items-center gap-4">
-                            <span>{user?.displayName || 'Аноним'}</span>
-                            <button onClick={() => user?.displayName ? signOut(auth) : setIsRegistering(true)} className="text-blue-600">
-                                {user?.displayName ? 'Выйти' : 'Регистрация'}
-                            </button>
-                        </div>
-                    </header>
-                    <main className="flex-1 overflow-y-auto p-4 space-y-4">
-                        {messages.map(msg => (
-                            <div key={msg.id} className={`flex flex-col ${msg.uid === user?.uid ? 'items-end' : 'items-start'}`}>
-                                <span className="text-xs text-gray-500 mb-1">{msg.displayName}</span>
-                                <div className={`px-4 py-2 rounded-2xl ${msg.uid === user?.uid ? 'bg-blue-600 text-white' : 'bg-white border'}`}>
-                                    {msg.text}
-                                </div>
-                            </div>
-                        ))}
-                        <div ref={messagesEndRef} />
-                    </main>
-                    <footer className="p-4 bg-white border-t">
-                        <form onSubmit={sendMessage} className="flex gap-2">
-                            <input 
-                                className="flex-1 bg-slate-100 rounded-xl px-4 py-2 outline-none" 
-                                placeholder="Сообщение..." 
-                                value={newMessage}
-                                onChange={e => setNewMessage(e.target.value)}
-                                disabled={!user?.displayName}
-                            />
-                            <button className="bg-blue-600 text-white px-6 py-2 rounded-xl">Отправить</button>
-                        </form>
-                    </footer>
-                </div>
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+<script src="script.js"></script>
 </body>
 </html>
